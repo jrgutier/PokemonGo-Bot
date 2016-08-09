@@ -113,7 +113,6 @@ class MoveToMapPokemon(BaseTask):
             except TypeError:
                 self._emit_failure('base64 error: {}'.format(pokemon['encounter_id']))
                 continue
-            pokemon['spawn_point_id'] = pokemon['spawnpoint_id']
             pokemon['disappear_time'] = int(pokemon['disappear_time'] / 1000)
             pokemon['name'] = self.pokemon_data[pokemon['pokemon_id'] - 1]['Name']
             pokemon['is_vip'] = pokemon['name'] in self.bot.config.vips
