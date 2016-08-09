@@ -91,11 +91,14 @@ class MoveToMapPokemon(BaseTask):
 
     def get_pokemon_from_map(self):
         try:
-            req = requests.get('{}/raw_data?gyms=false&scanned=false'.format(self.config['address']))
+            req = requests.get('https://skiplagged.com/api/pokemon.php?bounds={},{},{},{}'.format(
+                self.bot.position[0]-0.02,
+                self.bot.position[1]-0.02,
+                self.bot.position[0]+0.02,
+                self.bot.position[1]+0.02
+            )
         except requests.exceptions.ConnectionError:
-            self._emit_failure('Could not get Pokemon data from PokemonGo-Map: '
-                               '{}. Is it running?'.format(
-                                   self.config['address']))
+            self._emit_failure('Could not get Pokemon data from Skiplagged')
             return []
 
         try:
@@ -108,13 +111,8 @@ class MoveToMapPokemon(BaseTask):
         now = int(time.time())
 
         for pokemon in raw_data['pokemons']:
-            try:
-                pokemon['encounter_id'] = long(base64.b64decode(pokemon['encounter_id']))
-            except TypeError:
-                self._emit_failure('base64 error: {}'.format(pokemon['encounter_id']))
-                continue
-            pokemon['disappear_time'] = int(pokemon['disappear_time'] / 1000)
-            pokemon['name'] = self.pokemon_data[pokemon['pokemon_id'] - 1]['Name']
+            pokemon['disappear_time'] = int(pokemon['expires'] / 1000)
+            pokemon['name'] = pokemon['pokemon_name']
             pokemon['is_vip'] = pokemon['name'] in self.bot.config.vips
 
             if pokemon['name'] not in self.config['catch'] and not pokemon['is_vip']:
