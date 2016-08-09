@@ -154,49 +154,6 @@ class MoveToMapPokemon(BaseTask):
                 return True
         return False
 
-    def update_map_location(self):
-        if not self.config['update_map']:
-            return
-        try:
-            req = requests.get('{}/loc'.format(self.config['address']))
-        except requests.exceptions.ConnectionError:
-            self._emit_failure('Could not update trainer location '
-                               'PokemonGo-Map: {}. Is it running?'.format(
-                                   self.config['address']))
-            return
-
-        try:
-            loc_json = req.json()
-        except ValueError:
-            err = 'Map location data was not valid'
-            self._emit_failure(err)
-            return log.logger(err, 'red')
-
-        dist = distance(
-            self.bot.position[0],
-            self.bot.position[1],
-            loc_json['lat'],
-            loc_json['lng']
-        )
-
-        # update map when 500m away from center and last update longer than 2 minutes away
-        now = int(time.time())
-        if (dist > UPDATE_MAP_MIN_DISTANCE_METERS and
-            now - self.last_map_update > UPDATE_MAP_MIN_TIME_SEC):
-            requests.post(
-                '{}/next_loc?lat={}&lon={}'.format(self.config['address'],
-                                                   self.bot.position[0],
-                                                   self.bot.position[1]))
-            self.emit_event(
-                'move_to_map_pokemon_updated_map',
-                formatted='Updated PokemonGo-Map to {lat}, {lon}',
-                data={
-                    'lat': self.bot.position[0],
-                    'lon': self.bot.position[1]
-                }
-            )
-            self.last_map_update = now
-
     def snipe(self, pokemon):
         """Snipe a Pokemon by teleporting.
 
@@ -231,7 +188,6 @@ class MoveToMapPokemon(BaseTask):
         if (pokeballs + superballs + ultraballs) < 1:
             return WorkerResult.SUCCESS
 
-        self.update_map_location()
         self.dump_caught_pokemon()
 
         pokemon_list = self.get_pokemon_from_map()
